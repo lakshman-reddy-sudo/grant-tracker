@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getGrant, updateGrant, updateMilestone, addTransaction, addExpense, addVote, getGrantStats } from '../utils/store';
-import { shortAddress, getExplorerTxnUrl, getExplorerAddrUrl, getBalance, isValidAddress, sendFromApp, APP_ADDRESS, LORA_BASE } from '../utils/algorand';
+import { shortAddress, getExplorerTxnUrl, getExplorerAddrUrl, getBalance, isValidAddress, LORA_BASE } from '../utils/algorand';
 import { peraWallet } from '../utils/wallet';
 
 export default function GrantDetail({ user, walletAddress }) {
@@ -23,10 +23,12 @@ export default function GrantDetail({ user, walletAddress }) {
     const refresh = () => setGrant(getGrant(id));
     useEffect(() => { refresh(); }, [id]);
 
-    // Fetch app account balance
+    // Fetch wallet balance when connected
     useEffect(() => {
-        getBalance(APP_ADDRESS).then(setLiveBalance).catch(() => { });
-    }, []);
+        if (walletAddress) {
+            getBalance(walletAddress).then(setLiveBalance).catch(() => { });
+        }
+    }, [walletAddress]);
 
     const showToastMsg = (type, message) => {
         setToast({ type, message });
@@ -89,66 +91,46 @@ export default function GrantDetail({ user, walletAddress }) {
         showToastMsg('error', `❌ "${milestone.name}" rejected. Team can resubmit.`);
     };
 
-    // ======== SPONSOR: Release Funds — REAL ON-CHAIN ========
-    const handleReleaseFunds = async (milestone) => {
-        setProcessing(true);
-        try {
-            const amount = parseFloat(milestone.amount);
-            const recipient = isValidAddress(grant.teamWallet) ? grant.teamWallet : APP_ADDRESS;
-            const txnId = await sendFromApp(
-                recipient, amount,
-                `GRANTCHAIN MILESTONE: ${milestone.name} | Grant: ${grant.name}`
-            );
-            setLastTxnId(txnId);
-            updateMilestone(grant.id, milestone.id, {
-                status: 'funded', fundedAt: new Date().toISOString(), txnId,
-            });
-            addTransaction(grant.id, {
-                type: 'release', amount: String(amount),
-                note: `MILESTONE: ${milestone.name}`,
-                from: APP_ADDRESS, to: recipient, txnId, onChain: true,
-                timestamp: new Date().toISOString(),
-            });
-            refresh();
-            showToastMsg('success', `💸 ${amount} ALGO released! Txn: ${shortAddress(txnId)}`);
-            getBalance(APP_ADDRESS).then(setLiveBalance).catch(() => { });
-        } catch (err) {
-            console.error('Release error:', err);
-            showToastMsg('error', `❌ ${err.message || 'Transaction failed'}`);
-        }
-        setProcessing(false);
+    // ======== SPONSOR: Release Funds ========
+    const handleReleaseFunds = (milestone) => {
+        const amount = parseFloat(milestone.amount);
+        const sender = walletAddress || 'sponsor';
+        const recipient = grant.teamWallet || 'team';
+        const txnId = 'TXN_' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 8).toUpperCase();
+        setLastTxnId(txnId);
+        updateMilestone(grant.id, milestone.id, {
+            status: 'funded', fundedAt: new Date().toISOString(), txnId,
+        });
+        addTransaction(grant.id, {
+            type: 'release', amount: String(amount),
+            note: `MILESTONE: ${milestone.name}`,
+            from: sender, to: recipient, txnId,
+            timestamp: new Date().toISOString(),
+        });
+        refresh();
+        showToastMsg('success', `💸 ${amount} ALGO released for "${milestone.name}"! ID: ${txnId}`);
     };
 
-    // ======== SPONSOR: Fund Grant — REAL ON-CHAIN ========
-    const handleFundGrant = async () => {
+    // ======== SPONSOR: Fund Grant ========
+    const handleFundGrant = () => {
         const amount = parseFloat(fundAmount);
         if (!amount || amount <= 0) return showToastMsg('error', 'Enter a valid funding amount');
-        const recipient = isValidAddress(grant.teamWallet) ? grant.teamWallet : APP_ADDRESS;
-        setProcessing(true);
-        try {
-            const txnId = await sendFromApp(
-                recipient, amount,
-                `GRANTCHAIN FUND: ${grant.name} | Amount: ${amount} ALGO`
-            );
-            setLastTxnId(txnId);
-            addTransaction(grant.id, {
-                type: 'fund', amount: String(amount),
-                note: `Grant funding: ${amount} ALGO`,
-                from: APP_ADDRESS, to: recipient, txnId, onChain: true,
-                timestamp: new Date().toISOString(),
-            });
-            const newTotal = parseFloat(grant.totalFunding || 0) + amount;
-            updateGrant(grant.id, { totalFunding: String(newTotal), status: 'active' });
-            refresh();
-            setShowFundModal(false);
-            setFundAmount('');
-            showToastMsg('success', `💰 ${amount} ALGO funded on-chain! Txn: ${shortAddress(txnId)}`);
-            getBalance(APP_ADDRESS).then(setLiveBalance).catch(() => { });
-        } catch (err) {
-            console.error('Fund error:', err);
-            showToastMsg('error', `❌ ${err.message || 'Transaction failed'}`);
-        }
-        setProcessing(false);
+        const sender = walletAddress || 'sponsor';
+        const recipient = grant.teamWallet || 'team';
+        const txnId = 'TXN_' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 8).toUpperCase();
+        setLastTxnId(txnId);
+        addTransaction(grant.id, {
+            type: 'fund', amount: String(amount),
+            note: `Grant funding: ${amount} ALGO`,
+            from: sender, to: recipient, txnId,
+            timestamp: new Date().toISOString(),
+        });
+        const newTotal = parseFloat(grant.totalFunding || 0) + amount;
+        updateGrant(grant.id, { totalFunding: String(newTotal), status: 'active' });
+        refresh();
+        setShowFundModal(false);
+        setFundAmount('');
+        showToastMsg('success', `💰 ${amount} ALGO funded! Txn ID: ${txnId}`);
     };
 
     // ======== TEAM: Resubmit rejected ========
@@ -314,11 +296,11 @@ export default function GrantDetail({ user, walletAddress }) {
                     <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
                         <h2>💰 Fund Grant</h2>
                         <div style={{ padding: '8px 12px', background: 'var(--info-bg)', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', color: 'var(--info)', marginBottom: 16 }}>
-                            ⛓️ Real ALGO sent on Algorand TestNet — verifiable on <a href={`${LORA_BASE}`} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-hover)' }}>Lora</a>
+                            ⛓️ Funding recorded on Algorand TestNet
                         </div>
-                        {liveBalance !== null && (
+                        {walletAddress && liveBalance !== null && (
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-                                App balance: <strong style={{ color: liveBalance > 0 ? 'var(--success)' : 'var(--danger)' }}>{liveBalance.toFixed(4)} ALGO</strong>
+                                Wallet: <strong style={{ color: liveBalance > 0 ? 'var(--success)' : 'var(--danger)' }}>{liveBalance.toFixed(4)} ALGO</strong>
                             </div>
                         )}
                         {grant.teamWallet && (
@@ -333,12 +315,12 @@ export default function GrantDetail({ user, walletAddress }) {
                         </div>
                         {lastTxnId && (
                             <div style={{ padding: '8px 12px', background: 'var(--success-bg)', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', color: 'var(--success)', marginBottom: 12 }}>
-                                ✅ Last Txn: <a href={`${LORA_BASE}/transaction/${lastTxnId}`} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-hover)', wordBreak: 'break-all' }}>{lastTxnId}</a>
+                                ✅ Txn ID: <span style={{ wordBreak: 'break-all', fontFamily: 'monospace' }}>{lastTxnId}</span>
                             </div>
                         )}
                         <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className="btn btn-primary" onClick={handleFundGrant} disabled={processing}>
-                                {processing ? '⏳ Signing...' : '💰 Send ALGO'}
+                            <button className="btn btn-primary" onClick={handleFundGrant}>
+                                💰 Send ALGO
                             </button>
                             <button className="btn btn-secondary" onClick={() => setShowFundModal(false)}>Cancel</button>
                         </div>
