@@ -100,7 +100,7 @@ export default function CreateGrant({ user, walletAddress }) {
                 note: `Initial grant funding by ${user.name}`,
                 from: form.sponsorWallet ? form.sponsorWallet.slice(0, 12) + '...' : user.name,
                 to: escrowAddress.slice(0, 12) + '...',
-                txnId: `ALGO_TXN_FUND_${Date.now().toString(36).toUpperCase()}`,
+                txnId: null,
             }],
         });
 

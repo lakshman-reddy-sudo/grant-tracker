@@ -226,13 +226,13 @@ export function seedDemoData() {
             createdAt: '2026-02-15T10:30:00.000Z',
             status: 'active',
             milestones: [
-                { id: 1, name: 'Hardware Prototype', description: 'Assemble and test 5 IoT sensor nodes with Raspberry Pi', amount: '30', percentage: 30, status: 'funded', submittedAt: '2026-02-20T00:00:00Z', submittedBy: 'Team Alpha', submissionNote: 'All 5 nodes assembled and tested successfully.', approvedAt: '2026-02-21T00:00:00Z', approvedBy: 'Prof. Reddy', fundedAt: '2026-02-22T00:00:00Z', txnId: 'ALGO_TXN_HW_PROTO_001', votes: [{ voter: 'Prof. Reddy', decision: 'approve', timestamp: '2026-02-21T00:00:00Z' }, { voter: 'Dr. Sharma', decision: 'approve', timestamp: '2026-02-21T01:00:00Z' }], rejectedAt: null, rejectionNote: null },
+                { id: 1, name: 'Hardware Prototype', description: 'Assemble and test 5 IoT sensor nodes with Raspberry Pi', amount: '30', percentage: 30, status: 'funded', submittedAt: '2026-02-20T00:00:00Z', submittedBy: 'Team Alpha', submissionNote: 'All 5 nodes assembled and tested successfully.', approvedAt: '2026-02-21T00:00:00Z', approvedBy: 'Prof. Reddy', fundedAt: '2026-02-22T00:00:00Z', txnId: null, votes: [{ voter: 'Prof. Reddy', decision: 'approve', timestamp: '2026-02-21T00:00:00Z' }, { voter: 'Dr. Sharma', decision: 'approve', timestamp: '2026-02-21T01:00:00Z' }], rejectedAt: null, rejectionNote: null },
                 { id: 2, name: 'Data Pipeline & API', description: 'Build backend data pipeline, MQTT broker, and REST API', amount: '30', percentage: 30, status: 'submitted', submittedAt: '2026-02-28T00:00:00Z', submittedBy: 'Team Alpha', submissionNote: 'Pipeline built with Node.js + InfluxDB. API docs attached.', approvedAt: null, approvedBy: null, fundedAt: null, txnId: null, votes: [], rejectedAt: null, rejectionNote: null },
                 { id: 3, name: 'Dashboard & Campus Deployment', description: 'Build React dashboard and deploy sensors across 3 campus buildings', amount: '40', percentage: 40, status: 'pending', submittedAt: null, submittedBy: null, submissionNote: null, approvedAt: null, approvedBy: null, fundedAt: null, txnId: null, votes: [], rejectedAt: null, rejectionNote: null },
             ],
             transactions: [
-                { type: 'fund', amount: '100', note: 'Initial grant funding from CSE Department', from: 'SPONSWALLET1...', to: 'ESCROWADDR1...', timestamp: '2026-02-15T11:00:00Z', txnId: 'ALGO_TXN_FUND_001' },
-                { type: 'release', amount: '30', note: 'MILESTONE: Hardware Prototype completed', from: 'ESCROWADDR1...', to: 'TEAMWALLET1...', timestamp: '2026-02-22T12:00:00Z', txnId: 'ALGO_TXN_HW_PROTO_001' },
+                { type: 'fund', amount: '100', note: 'Initial grant funding from CSE Department', from: 'SPONSWALLET1...', to: 'ESCROWADDR1...', timestamp: '2026-02-15T11:00:00Z', txnId: null },
+                { type: 'release', amount: '30', note: 'MILESTONE: Hardware Prototype completed', from: 'ESCROWADDR1...', to: 'TEAMWALLET1...', timestamp: '2026-02-22T12:00:00Z', txnId: null },
             ],
             expenses: [
                 { id: 1, description: 'Raspberry Pi 4 × 5 units', amount: '15', category: 'Hardware', timestamp: '2026-02-18T00:00:00Z', loggedBy: 'Team Alpha' },
@@ -260,7 +260,7 @@ export function seedDemoData() {
                 { id: 3, name: 'Launch & Iteration', description: 'Public launch, collect feedback, iterate on features', amount: '15', percentage: 30, status: 'pending', submittedAt: null, submittedBy: null, submissionNote: null, approvedAt: null, approvedBy: null, fundedAt: null, txnId: null, votes: [], rejectedAt: null, rejectionNote: null },
             ],
             transactions: [
-                { type: 'fund', amount: '50', note: 'Innovation Cell seed grant', from: 'SPONSWALLET2...', to: 'ESCROWADDR2...', timestamp: '2026-02-20T15:00:00Z', txnId: 'ALGO_TXN_FUND_002' },
+                { type: 'fund', amount: '50', note: 'Innovation Cell seed grant', from: 'SPONSWALLET2...', to: 'ESCROWADDR2...', timestamp: '2026-02-20T15:00:00Z', txnId: null },
             ],
             expenses: [],
         },
