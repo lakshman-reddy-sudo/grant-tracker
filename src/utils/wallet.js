@@ -1,17 +1,16 @@
-import { PeraWalletConnect } from '@perawallet/connect';
+import { DeflyWalletConnect } from '@blockshake/defly-connect';
 
-const peraWallet = new PeraWalletConnect({
-    network: 'testnet',
-    chainId: 416002,
+const deflyWallet = new DeflyWalletConnect({
+    chainId: 416002, // TestNet
 });
 
 /**
- * Connect Pera Wallet
+ * Connect Defly Wallet (optional — for address display only)
  * @returns {Promise<string[]>} connected accounts
  */
 export async function connectWallet() {
     try {
-        const accounts = await peraWallet.connect();
+        const accounts = await deflyWallet.connect();
         return accounts;
     } catch (error) {
         if (error?.data?.type !== 'CONNECT_MODAL_CLOSED') {
@@ -25,25 +24,15 @@ export async function connectWallet() {
  * Disconnect wallet
  */
 export async function disconnectWallet() {
-    await peraWallet.disconnect();
+    await deflyWallet.disconnect();
 }
 
 /**
- * Sign transactions using Pera Wallet
- * @param {Uint8Array[]} txnGroups - Array of encoded transactions
- * @returns {Promise<Uint8Array[]>} signed transactions
- */
-export async function signTransactions(txnGroups) {
-    const signedTxns = await peraWallet.signTransaction([txnGroups]);
-    return signedTxns;
-}
-
-/**
- * Reconnect on page reload (if user previously connected)
+ * Reconnect on page reload
  * @param {function} onConnect - callback with accounts
  */
 export function reconnectWallet(onConnect) {
-    peraWallet
+    deflyWallet
         .reconnectSession()
         .then((accounts) => {
             if (accounts.length > 0) {
@@ -54,9 +43,9 @@ export function reconnectWallet(onConnect) {
             // No previous session
         });
 
-    peraWallet.connector?.on('disconnect', () => {
+    deflyWallet.connector?.on('disconnect', () => {
         onConnect([]);
     });
 }
 
-export { peraWallet };
+export { deflyWallet };

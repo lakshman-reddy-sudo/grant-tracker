@@ -184,4 +184,37 @@ export function formatAlgo(microAlgos) {
     return (microAlgos / 1_000_000).toFixed(4);
 }
 
-export { algodClient, indexerClient, algosdk };
+/**
+ * Get the Lora Transaction Composer URL (user will do the txn manually on Lora)
+ * @returns {string} Lora compose URL
+ */
+export function getLoraComposeUrl() {
+    return `${LORA_BASE}/transaction-wizard`;
+}
+
+/**
+ * Verify a transaction ID exists on-chain and return its details
+ * @param {string} txnId - the transaction ID to verify
+ * @returns {Promise<{ confirmed: boolean, sender: string, receiver: string, amount: number, note: string } | null>}
+ */
+export async function verifyTransaction(txnId) {
+    if (!txnId || txnId.length < 40) return null;
+    try {
+        const response = await indexerClient.searchForTransactions().txid(txnId).do();
+        const txn = response.transactions?.[0];
+        if (!txn) return null;
+        return {
+            confirmed: true,
+            sender: txn.sender,
+            receiver: txn['payment-transaction']?.receiver || '',
+            amount: txn['payment-transaction']?.amount
+                ? algosdk.microalgosToAlgos(txn['payment-transaction'].amount)
+                : 0,
+            note: txn.note ? new TextDecoder().decode(new Uint8Array(Buffer.from(txn.note, 'base64'))) : '',
+            confirmedRound: txn['confirmed-round'],
+        };
+    } catch {
+        return null;
+    }
+}
+

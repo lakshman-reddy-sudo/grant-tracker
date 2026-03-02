@@ -12,6 +12,7 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@blockshake/defly-connect": "^1.2.1",
     "@perawallet/connect": "^1.5.1",
     "algosdk": "^3.5.2",
     "buffer": "^6.0.3",

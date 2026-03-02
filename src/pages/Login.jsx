@@ -28,7 +28,7 @@ export default function Login({ onLogin, onWalletConnect }) {
             }
         } catch (err) {
             if (err?.data?.type !== 'CONNECT_MODAL_CLOSED') {
-                setError('Wallet connection failed. Make sure Pera is set to TestNet.');
+                setError('Wallet connection failed. Make sure Defly is set to TestNet.');
             }
         }
         setConnecting(false);
@@ -97,7 +97,7 @@ export default function Login({ onLogin, onWalletConnect }) {
 
                     {/* Wallet Connection */}
                     <div className="form-group">
-                        <label>Connect Pera Wallet (TestNet)</label>
+                        <label>Connect Defly Wallet (TestNet)</label>
                         {walletAddr ? (
                             <div style={{
                                 padding: '12px 16px', background: 'var(--success-bg)', border: '1px solid rgba(16,185,129,0.3)',
@@ -114,11 +114,11 @@ export default function Login({ onLogin, onWalletConnect }) {
                         ) : (
                             <button type="button" className="btn btn-secondary" style={{ width: '100%' }}
                                 onClick={handleConnectWallet} disabled={connecting}>
-                                {connecting ? '⏳ Connecting...' : '🔗 Connect Pera Wallet'}
+                                {connecting ? '⏳ Connecting...' : '🔗 Connect Defly Wallet'}
                             </button>
                         )}
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 6 }}>
-                            Required for on-chain transactions. Make sure Pera is set to TestNet.
+                            Required for on-chain transactions. Make sure Defly is set to TestNet.
                         </p>
                     </div>
 
