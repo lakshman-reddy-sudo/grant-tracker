@@ -22,6 +22,19 @@ export function getExplorerAddrUrl(address) {
 }
 
 /**
+ * Check if an Algorand address is valid
+ */
+export function isValidAddress(address) {
+    if (!address || typeof address !== 'string' || address.length !== 58) return false;
+    try {
+        algosdk.decodeAddress(address);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Create a multisig escrow address from 3 wallet addresses
  * @param {string[]} addresses - [sponsor, admin, team]
  * @param {number} threshold - signatures required (default 2)
@@ -90,10 +103,19 @@ export async function createNoteTxn(address, note) {
  */
 export async function submitSignedTxn(signedTxn) {
     const response = await algodClient.sendRawTransaction(signedTxn).do();
-    // algosdk v3: response may have txid as txId or txid
-    const txid = response.txid || response.txId || response;
+    // algosdk v3: sendRawTransaction may return txid string directly or { txid }
+    let txid;
+    if (typeof response === 'string') {
+        txid = response;
+    } else if (response && response.txid) {
+        txid = response.txid;
+    } else if (response && response.txId) {
+        txid = response.txId;
+    } else {
+        txid = String(response);
+    }
     await algosdk.waitForConfirmation(algodClient, txid, 4);
-    return typeof txid === 'string' ? txid : String(txid);
+    return txid;
 }
 
 /**
@@ -102,13 +124,17 @@ export async function submitSignedTxn(signedTxn) {
  * @returns {Promise<number>}
  */
 export async function getBalance(address) {
+    if (!isValidAddress(address)) {
+        console.warn('getBalance: invalid address', address);
+        return 0;
+    }
     try {
         const accountInfo = await algodClient.accountInformation(address).do();
         // algosdk v3: amount may be bigint — convert to Number
-        const microAlgos = Number(accountInfo.amount || accountInfo['amount'] || 0);
+        const microAlgos = Number(accountInfo.amount || 0);
         return microAlgos / 1_000_000;
     } catch (err) {
-        console.error('getBalance error:', err);
+        console.error('getBalance error:', err.message || err);
         return 0;
     }
 }

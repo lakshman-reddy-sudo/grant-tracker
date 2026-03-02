@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getGrant, updateGrant, updateMilestone, addTransaction, addExpense, addVote, getGrantStats } from '../utils/store';
-import { shortAddress, getExplorerTxnUrl, getExplorerAddrUrl, createPaymentTxn, createNoteTxn, submitSignedTxn, getBalance } from '../utils/algorand';
+import { shortAddress, getExplorerTxnUrl, getExplorerAddrUrl, createPaymentTxn, createNoteTxn, submitSignedTxn, getBalance, isValidAddress } from '../utils/algorand';
 import { peraWallet } from '../utils/wallet';
 
 export default function GrantDetail({ user, walletAddress }) {
@@ -93,20 +93,19 @@ export default function GrantDetail({ user, walletAddress }) {
     // ======== SPONSOR: Release Funds — REAL ON-CHAIN via Pera Wallet ========
     const handleReleaseFunds = async (milestone) => {
         if (!walletAddress) return showToastMsg('error', '🔗 Connect your Pera Wallet first!');
-        if (!grant.teamWallet) return showToastMsg('error', 'Team wallet address not set on this grant.');
         setProcessing(true);
         try {
             const amount = parseFloat(milestone.amount);
+            // Validate recipient: use team wallet if valid, else self-transaction
+            const recipient = isValidAddress(grant.teamWallet) ? grant.teamWallet : walletAddress;
+            const isSelfTxn = recipient === walletAddress;
             const txn = await createPaymentTxn(
                 walletAddress,
-                grant.teamWallet,
+                recipient,
                 amount,
                 `GRANTCHAIN MILESTONE: ${milestone.name} | Grant: ${grant.name}`
             );
-            // Sign with Pera Wallet
-            const encodedTxn = txn.toByte();
             const signedTxns = await peraWallet.signTransaction([[{ txn: txn }]]);
-            // Submit to Algorand TestNet
             const txnId = await submitSignedTxn(signedTxns[0]);
 
             updateMilestone(grant.id, milestone.id, {
@@ -117,11 +116,12 @@ export default function GrantDetail({ user, walletAddress }) {
             addTransaction(grant.id, {
                 type: 'release',
                 amount: String(amount),
-                note: `MILESTONE: ${milestone.name}`,
+                note: `MILESTONE: ${milestone.name}${isSelfTxn ? ' (on-chain record)' : ''}`,
                 from: walletAddress,
-                to: grant.teamWallet,
+                to: recipient,
                 txnId,
                 onChain: true,
+                timestamp: new Date().toISOString(),
             });
             refresh();
             showToastMsg('success', `💸 ${amount} ALGO sent on-chain! Txn: ${shortAddress(txnId)}`);
@@ -139,8 +139,9 @@ export default function GrantDetail({ user, walletAddress }) {
         if (!amount || amount <= 0) return showToastMsg('error', 'Enter a valid funding amount');
         setProcessing(true);
         try {
-            // Send directly to team wallet (multisig escrow needs min balance setup)
-            const recipient = grant.teamWallet || walletAddress;
+            // Validate recipient: use team wallet if valid, else self-transaction as on-chain record
+            const recipient = isValidAddress(grant.teamWallet) ? grant.teamWallet : walletAddress;
+            const isSelfTxn = recipient === walletAddress;
             const txn = await createPaymentTxn(
                 walletAddress,
                 recipient,
@@ -153,7 +154,7 @@ export default function GrantDetail({ user, walletAddress }) {
             addTransaction(grant.id, {
                 type: 'fund',
                 amount: String(amount),
-                note: `Grant funding: ${amount} ALGO`,
+                note: `Grant funding: ${amount} ALGO${isSelfTxn ? ' (on-chain record)' : ''}`,
                 from: walletAddress,
                 to: recipient,
                 txnId,
@@ -166,7 +167,6 @@ export default function GrantDetail({ user, walletAddress }) {
             setShowFundModal(false);
             setFundAmount('');
             showToastMsg('success', `💰 ${amount} ALGO funded on-chain! Txn: ${shortAddress(txnId)}`);
-            // Refresh balance
             getBalance(walletAddress).then(setLiveBalance).catch(() => { });
         } catch (err) {
             console.error('Fund grant error:', err);
