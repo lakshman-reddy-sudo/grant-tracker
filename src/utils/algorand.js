@@ -4,8 +4,34 @@ import algosdk from 'algosdk';
 const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '');
 const indexerClient = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '');
 
-// Pera Explorer base URL for TestNet
+// Explorer base URLs for TestNet
 export const EXPLORER_BASE = 'https://testnet.explorer.perawallet.app';
+export const LORA_BASE = 'https://lora.algokit.io/testnet';
+
+/**
+ * Sign and submit a transaction using a mnemonic (25-word phrase)
+ * This bypasses Pera WalletConnect and always works reliably
+ * @param {algosdk.Transaction} txn - the transaction to sign
+ * @param {string} mnemonic - 25-word Algorand mnemonic
+ * @returns {Promise<string>} - the transaction ID
+ */
+export async function signAndSubmitTxn(txn, mnemonic) {
+    const { sk } = algosdk.mnemonicToSecretKey(mnemonic.trim());
+    const signedTxn = txn.signTxn(sk);
+    const response = await algodClient.sendRawTransaction(signedTxn).do();
+    let txid;
+    if (typeof response === 'string') {
+        txid = response;
+    } else if (response && response.txid) {
+        txid = response.txid;
+    } else if (response && response.txId) {
+        txid = response.txId;
+    } else {
+        txid = String(response);
+    }
+    await algosdk.waitForConfirmation(algodClient, txid, 4);
+    return txid;
+}
 
 /**
  * Get AlgoExplorer URL for a transaction
