@@ -8,8 +8,26 @@
   <meta name="description"
     content="Transparent grant and fund tracking system on Algorand blockchain. Milestone-based fund releases with multisig escrow." />
   <title>GrantChain — Transparent Fund Tracking on Algorand</title>
-  <script type="module" crossorigin src="/grant-tracker/assets/index-BFnKeUSz.js"></script>
-  <link rel="stylesheet" crossorigin href="/grant-tracker/assets/index-B1I9-Y6J.css">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            dark: { 900: '#0a0b14', 800: '#141522', 700: '#1e1f30' },
+            neon: { purple: '#8b5cf6', cyan: '#06b6d4', green: '#10b981', pink: '#ec4899', blue: '#3b82f6' }
+          }
+        }
+      }
+    }
+  </script>
+  <script type="module" crossorigin src="/grant-tracker/assets/index-DPhtrAGQ.js"></script>
+  <link rel="stylesheet" crossorigin href="/grant-tracker/assets/index-DBMgS8mV.css">
 </head>
 
 <body>
