@@ -8,42 +8,6 @@ const indexerClient = new algosdk.Indexer('', 'https://testnet-idx.algonode.clou
 export const EXPLORER_BASE = 'https://testnet.explorer.perawallet.app';
 export const LORA_BASE = 'https://lora.algokit.io/testnet';
 
-// ========== DEMO TREASURY ACCOUNT (TestNet only — no real value) ==========
-// This account is used to demo real on-chain transactions
-// Fund it via: https://bank.testnet.algorand.network/
-const TREASURY_MNEMONIC = 'sound gossip chief once prison sister powder rate bless unfold welcome parade flavor raven camera found festival high round action october gesture reunion about gate';
-const { addr: TREASURY_ADDR, sk: TREASURY_SK } = algosdk.mnemonicToSecretKey(TREASURY_MNEMONIC);
-export const TREASURY_ADDRESS = String(TREASURY_ADDR);
-
-/**
- * Send ALGO from the demo treasury account to any recipient
- * No mnemonic input needed — the treasury signs automatically
- * @param {string} toAddress - recipient wallet address
- * @param {number} amountInAlgo - amount in ALGO
- * @param {string} note - transaction note
- * @returns {Promise<string>} - the transaction ID
- */
-export async function sendAlgoFromTreasury(toAddress, amountInAlgo, note = '') {
-    const suggestedParams = await getSuggestedParams();
-    const microAlgos = Math.round(amountInAlgo * 1_000_000);
-    const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        from: TREASURY_ADDRESS,
-        to: toAddress,
-        amount: microAlgos,
-        note: new TextEncoder().encode(note),
-        suggestedParams,
-    });
-    const signedTxn = txn.signTxn(TREASURY_SK);
-    const response = await algodClient.sendRawTransaction(signedTxn).do();
-    let txid;
-    if (typeof response === 'string') txid = response;
-    else if (response?.txid) txid = response.txid;
-    else if (response?.txId) txid = response.txId;
-    else txid = String(response);
-    await algosdk.waitForConfirmation(algodClient, txid, 4);
-    return txid;
-}
-
 /**
  * Get AlgoExplorer URL for a transaction
  */
