@@ -139,18 +139,47 @@ export default function GrantDetail({ user, walletAddress }) {
         if (!amount || amount <= 0) return showToastMsg('error', 'Enter a valid funding amount');
         setProcessing(true);
         try {
-            // Validate recipient: use team wallet if valid, else self-transaction as on-chain record
+            // Step 1: Determine recipient
             const recipient = isValidAddress(grant.teamWallet) ? grant.teamWallet : walletAddress;
             const isSelfTxn = recipient === walletAddress;
+            console.log('[GrantChain] Fund: from', walletAddress, 'to', recipient, 'amount', amount);
+
+            // Step 2: Create transaction
             const txn = await createPaymentTxn(
                 walletAddress,
                 recipient,
                 amount,
                 `GRANTCHAIN FUND: ${grant.name} | Amount: ${amount} ALGO`
             );
-            const signedTxns = await peraWallet.signTransaction([[{ txn: txn }]]);
-            const txnId = await submitSignedTxn(signedTxns[0]);
+            console.log('[GrantChain] Transaction created, requesting Pera signature...');
 
+            // Step 3: Ensure Pera connector is active
+            if (!peraWallet.connector) {
+                console.log('[GrantChain] Pera connector not found, reconnecting...');
+                try {
+                    await peraWallet.reconnectSession();
+                } catch (reconnectErr) {
+                    console.warn('[GrantChain] Reconnect failed, continuing anyway...');
+                }
+            }
+
+            // Step 4: Sign with Pera Wallet
+            let signedTxns;
+            try {
+                signedTxns = await peraWallet.signTransaction([[{ txn }]]);
+            } catch (signErr) {
+                if (signErr?.data?.type === 'SIGN_TRANSACTIONS' || signErr?.message?.includes('rejected')) {
+                    throw new Error('Transaction rejected by user in Pera Wallet');
+                }
+                throw signErr;
+            }
+            console.log('[GrantChain] Transaction signed! Submitting to TestNet...');
+
+            // Step 5: Submit to Algorand TestNet
+            const txnId = await submitSignedTxn(signedTxns[0]);
+            console.log('[GrantChain] ✅ Transaction confirmed! TxnID:', txnId);
+
+            // Step 6: Record in app
             addTransaction(grant.id, {
                 type: 'fund',
                 amount: String(amount),
@@ -169,8 +198,15 @@ export default function GrantDetail({ user, walletAddress }) {
             showToastMsg('success', `💰 ${amount} ALGO funded on-chain! Txn: ${shortAddress(txnId)}`);
             getBalance(walletAddress).then(setLiveBalance).catch(() => { });
         } catch (err) {
-            console.error('Fund grant error:', err);
-            showToastMsg('error', `❌ Funding failed: ${err.message || 'User rejected or network error'}`);
+            console.error('[GrantChain] Fund error:', err);
+            const msg = err.message || 'Unknown error';
+            if (msg.includes('rejected')) {
+                showToastMsg('error', '❌ Transaction rejected in Pera Wallet');
+            } else if (msg.includes('overspend') || msg.includes('balance')) {
+                showToastMsg('error', '❌ Insufficient ALGO balance for this transaction');
+            } else {
+                showToastMsg('error', `❌ Funding failed: ${msg}`);
+            }
         }
         setProcessing(false);
     };
