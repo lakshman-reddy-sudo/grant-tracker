@@ -44,6 +44,9 @@ function NavBar({ user, walletAddress, onConnect, onDisconnect, onLogout }) {
         {user.role === 'sponsor' && (
           <li><Link to="/create" className={isActive('/create')}>Create Grant</Link></li>
         )}
+        {user.role === 'team' && (
+          <li><Link to="/create" className={isActive('/create')}>📤 Submit Proposal</Link></li>
+        )}
       </ul>
 
       <div className="navbar-actions">

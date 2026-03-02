@@ -5,13 +5,15 @@ import { createMultisigAddress } from '../utils/algorand';
 
 export default function CreateGrant({ user, walletAddress }) {
     const navigate = useNavigate();
+    const isTeam = user?.role === 'team';
+    const isSponsor = user?.role === 'sponsor';
     const [form, setForm] = useState({
         name: '',
         description: '',
-        teamName: '',
-        teamWallet: '',
-        sponsorName: user?.name || '',
-        sponsorWallet: walletAddress || '',
+        teamName: isTeam ? (user?.name || '') : '',
+        teamWallet: isTeam ? (walletAddress || '') : '',
+        sponsorName: isSponsor ? (user?.name || '') : '',
+        sponsorWallet: isSponsor ? (walletAddress || '') : '',
         adminName: '',
         adminWallet: '',
         totalFunding: '',
@@ -23,14 +25,14 @@ export default function CreateGrant({ user, walletAddress }) {
     ]);
     const [toast, setToast] = useState(null);
 
-    // Only sponsors can create grants
-    if (user?.role !== 'sponsor') {
+    // Only sponsors and team can create grants/proposals
+    if (user?.role === 'admin') {
         return (
             <div className="page fade-in">
                 <div className="empty-state">
                     <div className="empty-icon">🚫</div>
                     <h3>Access Restricted</h3>
-                    <p>Only <strong>Sponsors</strong> can create new grants.</p>
+                    <p>Admins review grants. <strong>Sponsors</strong> create grants and <strong>Teams</strong> submit proposals.</p>
                     <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
                 </div>
             </div>
@@ -89,22 +91,32 @@ export default function CreateGrant({ user, walletAddress }) {
             amount: ((Number(m.percentage) / 100) * totalFunding).toFixed(2),
         }));
 
-        const grant = createGrant({
+        const grantData = {
             ...form,
             escrowAddress,
             multisigParams,
             milestones: formattedMilestones,
-            transactions: [{
+        };
+
+        // Team-created grants are proposals awaiting sponsor funding
+        if (isTeam) {
+            grantData.status = 'proposed';
+            grantData.proposedBy = user.name;
+        } else {
+            // Sponsor-created grants get an initial (off-chain) funding record
+            grantData.transactions = [{
                 type: 'fund',
                 amount: String(totalFunding),
                 note: `Initial grant funding by ${user.name}`,
                 from: form.sponsorWallet ? form.sponsorWallet.slice(0, 12) + '...' : user.name,
                 to: escrowAddress.slice(0, 12) + '...',
                 txnId: null,
-            }],
-        });
+            }];
+        }
 
-        showToast('success', `Grant "${grant.name}" created! Redirecting...`);
+        const grant = createGrant(grantData);
+
+        showToast('success', isTeam ? `Proposal "${grant.name}" submitted! Waiting for sponsor funding.` : `Grant "${grant.name}" created! Redirecting...`);
         setTimeout(() => navigate(`/grant/${grant.id}`), 1500);
     };
 
@@ -113,8 +125,8 @@ export default function CreateGrant({ user, walletAddress }) {
             {toast && <div className={`toast toast-${toast.type}`}>{toast.message}</div>}
 
             <div className="page-header">
-                <h1>Create New Grant</h1>
-                <p>Set up a milestone-based grant with multisig escrow on Algorand</p>
+                <h1>{isTeam ? '📤 Submit Project Proposal' : 'Create New Grant'}</h1>
+                <p>{isTeam ? 'Submit your project for sponsor funding — milestones define how funds are released' : 'Set up a milestone-based grant with multisig escrow on Algorand'}</p>
             </div>
 
             <form onSubmit={handleSubmit} style={{ maxWidth: '720px' }}>
@@ -218,7 +230,7 @@ export default function CreateGrant({ user, walletAddress }) {
 
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button type="submit" className="btn btn-primary btn-lg" disabled={totalPercentage !== 100}>
-                        🚀 Create Grant & Fund Escrow
+                        {isTeam ? '📤 Submit Proposal' : '🚀 Create Grant & Fund Escrow'}
                     </button>
                     <button type="button" className="btn btn-secondary btn-lg" onClick={() => navigate('/dashboard')}>Cancel</button>
                 </div>

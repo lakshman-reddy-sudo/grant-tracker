@@ -160,7 +160,7 @@ export default function GrantDetail({ user, walletAddress }) {
                 onChain: true,
             });
             const newTotal = parseFloat(grant.totalFunding || 0) + amount;
-            updateGrant(grant.id, { totalFunding: String(newTotal) });
+            updateGrant(grant.id, { totalFunding: String(newTotal), status: 'active' });
             refresh();
             setShowFundModal(false);
             setFundAmount('');
@@ -385,6 +385,23 @@ export default function GrantDetail({ user, walletAddress }) {
             {!walletAddress && (user.role === 'sponsor' || user.role === 'team') && (
                 <div style={{ padding: '12px 16px', background: 'var(--warning-bg)', borderRadius: 'var(--radius-sm)', marginBottom: 20, fontSize: '0.88rem', color: 'var(--warning)' }}>
                     ⚠️ Connect your Pera Wallet (top right) to enable on-chain transactions
+                </div>
+            )}
+
+            {/* Proposed Grant Banner */}
+            {grant.status === 'proposed' && (
+                <div style={{ padding: '14px 20px', background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-md)', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--warning)', marginBottom: 4 }}>📨 Proposal Awaiting Funding</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            Submitted by <strong>{grant.proposedBy || grant.teamName}</strong> — needs sponsor to fund and activate this grant.
+                        </div>
+                    </div>
+                    {user.role === 'sponsor' && walletAddress && (
+                        <button className="btn btn-primary" onClick={() => { setFundAmount('1'); setShowFundModal(true); }}>
+                            💰 Fund This Proposal (1 ALGO)
+                        </button>
+                    )}
                 </div>
             )}
 

@@ -67,6 +67,9 @@ export default function Dashboard({ user, walletAddress }) {
                 {user.role === 'sponsor' && (
                     <Link to="/create" className="btn btn-primary">➕ New Grant</Link>
                 )}
+                {user.role === 'team' && (
+                    <Link to="/create" className="btn btn-primary">📤 Submit Proposal</Link>
+                )}
             </div>
 
             {/* Stats */}
