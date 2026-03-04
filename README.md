@@ -297,4 +297,4 @@ This project is built for the **Algorand No-TEAL Hackathon**.
 
 ## 👨‍💻 Team
 
-Built by **Lakshman Reddy** — [GitHub](https://github.com/lakshman-reddy-sudo)
+Edited by **Lakshman Reddy** — [GitHub](https://github.com/lakshman-reddy-sudo)
